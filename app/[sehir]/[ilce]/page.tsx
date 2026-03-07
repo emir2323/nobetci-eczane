@@ -5,24 +5,21 @@ import Link from "next/link";
 import { Metadata } from 'next';
 
 interface PageProps {
-    params: { sehir: string; ilce: string };
+    params: { sehir?: string; ilce?: string };
 }
 
-// Dinamik SEO Metadata
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const sehir = params.sehir.charAt(0).toUpperCase() + params.sehir.slice(1);
-    const ilce = params.ilce.charAt(0).toUpperCase() + params.ilce.slice(1);
+// Güvenli ve Statik Metadata
+export const metadata: Metadata = {
+    title: "Nöbetçi Eczane",
+    description: "Bölgenizdeki nöbetçi eczaneleri hemen görüntüleyin.",
+};
 
-    return {
-        title: `${ilce} Nöbetçi Eczaneler - ${sehir} | En Yakın Eczane Bul`,
-        description: `${sehir} ${ilce} bölgesindeki nöbetçi eczaneleri, adres ve telefon bilgilerini hemen görüntüleyin.`,
-    };
-}
+export default function DistrictPharmaciesPage({ params }: PageProps) {
+    // Params güvenliği
+    const sehir = params?.sehir || "istanbul";
+    const ilce = params?.ilce || "kadikoy";
 
-export default async function DistrictPharmaciesPage({ params }: PageProps) {
-    const { sehir, ilce } = params;
-
-    const pharmacies = await getPharmacies(sehir, ilce);
+    const pharmacies = getPharmacies(sehir, ilce);
 
     const displaySehir = sehir.charAt(0).toUpperCase() + sehir.slice(1);
     const displayIlce = ilce.charAt(0).toUpperCase() + ilce.slice(1);
