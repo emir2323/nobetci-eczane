@@ -21,6 +21,13 @@ export default function Home() {
 
   const { coordinates, error: locationError, loading: locationLoading, getLocation } = useGeolocation();
 
+  useEffect(() => {
+    if (locationError && filterMode === 'location') {
+      alert("Konumunuz bulunamadı, lütfen il ve ilçe seçerek arama yapınız.");
+      setFilterMode('form');
+    }
+  }, [locationError, filterMode]);
+
   // Update districts list when city changes
   useEffect(() => {
     if (city) {
@@ -56,20 +63,14 @@ export default function Home() {
           // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
           if (userCity.includes('istanbul')) userCity = 'istanbul';
 
-          // 2. Fetch Real Pharmacies
-          const pharmacies = await getPharmacies(userCity, userDistrict);
-
-          // 3. Map and Sort Distances
-          const pharmaciesWithDistance = pharmacies.map(p => ({
-            ...p,
-            distance: calculateDistance(coordinates.lat, coordinates.lng, p.latitude, p.longitude)
-          })).sort((a, b) => (a.distance || 0) - (b.distance || 0));
-
-          setResults(pharmaciesWithDistance);
+          // Yönlendirme işlemi SEO yapısına uyarlanıyor
+          router.push(`/${userCity}/${userDistrict}-nobetci-eczane`);
         } catch (error) {
-          console.error("Bulunduğunuz konumdaki eczaneler getirilirken bir hata oluştu:", error);
+          console.error("Bulunduğunuz konum işlenirken bir hata oluştu:", error);
+          alert("Konumunuz bulunamadı, lütfen il ve ilçe seçerek arama yapınız.");
         } finally {
           setIsSearching(false);
+          setFilterMode('form'); // reset mode
         }
       };
 
