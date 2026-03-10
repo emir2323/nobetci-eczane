@@ -7,6 +7,7 @@ export interface BlogPost {
     imageUrl: string;
     date: string;
     author: string;
+    keywords?: string;
 }
 
 export const mockBlogPosts: BlogPost[] = [

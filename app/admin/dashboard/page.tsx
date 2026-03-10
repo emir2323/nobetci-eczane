@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mockBlogPosts, BlogPost } from "@/lib/mock-blog";
-import { FileText, LogOut, Plus, Home, Edit, Trash2, MapPin } from "lucide-react";
+import { FileText, LogOut, Plus, Home, Edit, Trash2, MapPin, Settings } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -17,6 +17,11 @@ export default function AdminDashboardPage() {
     const [newTitle, setNewTitle] = useState("");
     const [newImage, setNewImage] = useState("");
     const [newContent, setNewContent] = useState("");
+    const [newKeywords, setNewKeywords] = useState("");
+
+    const [gaId, setGaId] = useState("");
+    const [adCode1, setAdCode1] = useState("");
+    const [adCode2, setAdCode2] = useState("");
 
     useEffect(() => {
         setIsClient(true);
@@ -26,6 +31,9 @@ export default function AdminDashboardPage() {
             router.push("/admin");
         } else {
             setPosts(mockBlogPosts);
+            setGaId(localStorage.getItem("gaId") || "");
+            setAdCode1(localStorage.getItem("adCode1") || "");
+            setAdCode2(localStorage.getItem("adCode2") || "");
         }
     }, [router]);
 
@@ -47,6 +55,7 @@ export default function AdminDashboardPage() {
             imageUrl: newImage || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
             date: new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }),
             author: "Admin",
+            keywords: newKeywords,
         };
 
         setPosts([newPost, ...posts]);
@@ -54,6 +63,15 @@ export default function AdminDashboardPage() {
         setNewTitle("");
         setNewContent("");
         setNewImage("");
+        setNewKeywords("");
+    };
+
+    const handleSaveSettings = (e: React.FormEvent) => {
+        e.preventDefault();
+        localStorage.setItem("gaId", gaId);
+        localStorage.setItem("adCode1", adCode1);
+        localStorage.setItem("adCode2", adCode2);
+        alert("Ayarlar başarıyla kaydedildi!");
     };
 
     if (!isClient) return null; // Hydration hatasını önlemek için
@@ -84,6 +102,13 @@ export default function AdminDashboardPage() {
                     >
                         <MapPin className={`h-5 w-5 ${activeTab === 'eczaneler' ? 'text-blue-500' : 'text-slate-400'}`} />
                         Eczane Listesi
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("ayarlar")}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeTab === 'ayarlar' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                    >
+                        <Settings className={`h-5 w-5 ${activeTab === 'ayarlar' ? 'text-blue-500' : 'text-slate-400'}`} />
+                        Site Ayarları
                     </button>
                 </nav>
 
@@ -140,6 +165,14 @@ export default function AdminDashboardPage() {
                                             className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                         ></textarea>
                                     </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Anahtar Kelimeler (Virgülle ayırın)</label>
+                                        <input
+                                            type="text"
+                                            value={newKeywords} onChange={e => setNewKeywords(e.target.value)}
+                                            className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                        />
+                                    </div>
                                     <button type="submit" className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-colors">
                                         Kaydet
                                     </button>
@@ -182,6 +215,44 @@ export default function AdminDashboardPage() {
                         <MapPin className="h-12 w-12 text-slate-300 mb-4" />
                         <h2 className="text-xl font-bold text-slate-900">Eczane Listesi</h2>
                         <p className="mt-2 text-slate-500 max-w-md">Eczane listesi doğrudan CollectAPI üzerinden dinamik olarak gelmektedir. Bu modül şu an sadece izleme (view-only) modundadır.</p>
+                    </div>
+                )}
+
+                {activeTab === 'ayarlar' && (
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">Site Ayarları</h1>
+                        <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Google Analytics ID (str. G-XXXX)</label>
+                                <input
+                                    type="text"
+                                    value={gaId} onChange={e => setGaId(e.target.value)}
+                                    placeholder="G-XXXXXXXXXX"
+                                    className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Reklam Kodu 1 (Header/Üst)</label>
+                                <textarea
+                                    rows={4}
+                                    value={adCode1} onChange={e => setAdCode1(e.target.value)}
+                                    placeholder="<script>...</script> veya <div>...</div>"
+                                    className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Reklam Kodu 2 (Footer/Alt)</label>
+                                <textarea
+                                    rows={4}
+                                    value={adCode2} onChange={e => setAdCode2(e.target.value)}
+                                    placeholder="<script>...</script> veya <div>...</div>"
+                                    className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                                />
+                            </div>
+                            <button type="submit" className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                                Ayarları Kaydet
+                            </button>
+                        </form>
                     </div>
                 )}
             </main>

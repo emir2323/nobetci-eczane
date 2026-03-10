@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
         title: `${post.title} | Nöbetçi Eczane Blog`,
         description: post.summary,
+        keywords: post.keywords ? post.keywords.split(',').map(k => k.trim()) : undefined,
     };
 }
 

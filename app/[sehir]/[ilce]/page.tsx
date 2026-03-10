@@ -3,21 +3,29 @@ import { PharmacyCard } from "@/components/ui/PharmacyCard";
 import { Map as MapIcon, ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from 'next';
+import AdSlot from "@/components/AdSlot";
 
 
 
-// Güvenli ve Statik Metadata
-export const metadata: Metadata = {
-    title: "Nöbetçi Eczane",
-    description: "Bölgenizdeki nöbetçi eczaneleri hemen görüntüleyin.",
-};
+export async function generateMetadata({ params }: { params: Promise<{ sehir: string; ilce: string }> }): Promise<Metadata> {
+    const resolvedParams = await params;
+    const sehir = resolvedParams.sehir.charAt(0).toUpperCase() + resolvedParams.sehir.slice(1);
+    const rawIlce = resolvedParams.ilce.replace(/-nobetci-eczane/g, '');
+    const displayIlce = rawIlce.charAt(0).toUpperCase() + rawIlce.slice(1);
+
+    return {
+        title: `${displayIlce} Nöbetçi Eczaneleri, ${sehir} | Nöbetçi Eczane`,
+        description: `${sehir} ili ${displayIlce} ilçesindeki güncel nöbetçi eczaneler. Adres, telefon ve yol tarifi bilgileriyle hemen görüntüleyin.`,
+    };
+}
 
 export default async function DistrictPharmaciesPage({ params }: { params: Promise<{ sehir: string; ilce: string }> }) {
     const resolvedParams = await params;
 
     // Gelen yönlendirme parametreleri 
     const sehir = resolvedParams.sehir;
-    const ilce = resolvedParams.ilce;
+    const rawIlce = resolvedParams.ilce;
+    const ilce = rawIlce.replace(/-nobetci-eczane/g, '');
 
     const pharmacies = await getPharmacies(sehir, ilce);
 
@@ -47,6 +55,8 @@ export default async function DistrictPharmaciesPage({ params }: { params: Promi
                 </p>
             </div>
 
+            <AdSlot type="header" className="my-6" />
+
             {pharmacies.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-16 text-center shadow-sm">
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 mb-4 text-slate-400">
@@ -70,6 +80,8 @@ export default async function DistrictPharmaciesPage({ params }: { params: Promi
                     ))}
                 </div>
             )}
+
+            <AdSlot type="footer" className="mt-8" />
         </div>
     );
 }

@@ -89,7 +89,7 @@ export default function Home() {
     setTimeout(() => {
       const citySlug = slugify(city);
       const districtSlug = slugify(district);
-      router.push(`/${citySlug}/${districtSlug}`);
+      router.push(`/${citySlug}/${districtSlug}-nobetci-eczane`);
     }, 400);
   };
 
