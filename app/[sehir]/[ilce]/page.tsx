@@ -4,9 +4,7 @@ import { Map as MapIcon, ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from 'next';
 
-interface PageProps {
-    params: { sehir?: string; ilce?: string };
-}
+
 
 // Güvenli ve Statik Metadata
 export const metadata: Metadata = {
@@ -14,10 +12,12 @@ export const metadata: Metadata = {
     description: "Bölgenizdeki nöbetçi eczaneleri hemen görüntüleyin.",
 };
 
-export default async function DistrictPharmaciesPage({ params }: PageProps) {
-    // Params güvenliği
-    const sehir = params?.sehir || "istanbul";
-    const ilce = params?.ilce || "kadikoy";
+export default async function DistrictPharmaciesPage({ params }: { params: Promise<{ sehir: string; ilce: string }> }) {
+    const resolvedParams = await params;
+
+    // Gelen yönlendirme parametreleri 
+    const sehir = resolvedParams.sehir;
+    const ilce = resolvedParams.ilce;
 
     const pharmacies = await getPharmacies(sehir, ilce);
 
