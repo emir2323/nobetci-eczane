@@ -18,6 +18,7 @@ export default function AdminDashboardPage() {
     const [newImage, setNewImage] = useState("");
     const [newContent, setNewContent] = useState("");
     const [newKeywords, setNewKeywords] = useState("");
+    const [editPostId, setEditPostId] = useState<string | null>(null);
 
     const [gaId, setGaId] = useState("");
     const [adCode1, setAdCode1] = useState("");
@@ -46,25 +47,61 @@ export default function AdminDashboardPage() {
         e.preventDefault();
         if (!newTitle || !newContent) return;
 
-        const newPost: BlogPost = {
-            id: Date.now().toString(),
-            title: newTitle,
-            slug: newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            summary: newContent.substring(0, 100) + "...",
-            content: newContent,
-            imageUrl: newImage || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
-            date: new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }),
-            author: "Admin",
-            keywords: newKeywords,
-        };
+        if (editPostId) {
+            // Update existing post
+            const updatedPosts = posts.map(post => {
+                if (post.id === editPostId) {
+                    return {
+                        ...post,
+                        title: newTitle,
+                        slug: newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                        summary: newContent.substring(0, 100) + "...",
+                        content: newContent,
+                        imageUrl: newImage || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
+                        keywords: newKeywords,
+                    };
+                }
+                return post;
+            });
+            setPosts(updatedPosts);
+        } else {
+            // Create new post
+            const newPost: BlogPost = {
+                id: Date.now().toString(),
+                title: newTitle,
+                slug: newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                summary: newContent.substring(0, 100) + "...",
+                content: newContent,
+                imageUrl: newImage || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
+                date: new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }),
+                author: "Admin",
+                keywords: newKeywords,
+            };
+            setPosts([newPost, ...posts]);
+        }
 
-        setPosts([newPost, ...posts]);
+        resetForm();
+    };
+
+    const handleEditClick = (post: BlogPost) => {
+        setEditPostId(post.id);
+        setNewTitle(post.title);
+        setNewImage(post.imageUrl);
+        setNewContent(post.content);
+        setNewKeywords(post.keywords || "");
+        setShowAddForm(true);
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const resetForm = () => {
         setShowAddForm(false);
+        setEditPostId(null);
         setNewTitle("");
         setNewContent("");
         setNewImage("");
         setNewKeywords("");
-    };
+    }
 
     const handleSaveSettings = (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,7 +167,10 @@ export default function AdminDashboardPage() {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 border-b border-slate-100 pb-4">
                             <h1 className="text-2xl font-bold text-slate-900">Makale Yönetimi</h1>
                             <button
-                                onClick={() => setShowAddForm(!showAddForm)}
+                                onClick={() => {
+                                    if (showAddForm) resetForm();
+                                    else setShowAddForm(true);
+                                }}
                                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
                             >
                                 {showAddForm ? 'İptal Et' : <><Plus className="h-4 w-4" /> Yeni Ekle</>}
@@ -139,7 +179,9 @@ export default function AdminDashboardPage() {
 
                         {showAddForm && (
                             <div className="mb-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                                <h3 className="text-lg font-bold text-slate-900 mb-4">Yeni Makale Ekle</h3>
+                                <h3 className="text-lg font-bold text-slate-900 mb-4">
+                                    {editPostId ? 'Makaleyi Düzenle' : 'Yeni Makale Ekle'}
+                                </h3>
                                 <form onSubmit={handleCreatePost} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Başlık</label>
@@ -174,7 +216,7 @@ export default function AdminDashboardPage() {
                                         />
                                     </div>
                                     <button type="submit" className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-colors">
-                                        Kaydet
+                                        {editPostId ? 'Güncelle' : 'Kaydet'}
                                     </button>
                                 </form>
                             </div>
@@ -191,7 +233,10 @@ export default function AdminDashboardPage() {
                                         <p className="text-sm text-slate-500 truncate">{post.date} • {post.author}</p>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <button
+                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            onClick={() => handleEditClick(post)}
+                                        >
                                             <Edit className="h-4 w-4" />
                                         </button>
                                         <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
