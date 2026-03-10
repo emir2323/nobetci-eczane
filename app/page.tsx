@@ -4,21 +4,40 @@ import { useState, useEffect } from "react";
 import { Search, Map as MapIcon, ChevronDown, Navigation, AlertCircle } from "lucide-react";
 import { PharmacyCard } from "@/components/ui/PharmacyCard";
 import { getPharmacies } from "@/lib/api-service";
-import { CITIES } from "@/lib/constants";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { calculateDistance, slugify } from "@/lib/utils";
 import { Pharmacy } from "@/types";
 import { useRouter } from "next/navigation";
+import turkeyData from "@/lib/turkey-data.json";
 
 export default function Home() {
-  const [city, setCity] = useState("istanbul");
-  const [district, setDistrict] = useState("kadikoy");
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
+  const [districtsOfCity, setDistrictsOfCity] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<Pharmacy[]>([]);
   const [filterMode, setFilterMode] = useState<'form' | 'location'>('form');
   const router = useRouter();
 
   const { coordinates, error: locationError, loading: locationLoading, getLocation } = useGeolocation();
+
+  // Update districts list when city changes
+  useEffect(() => {
+    if (city) {
+      const selectedCityData = turkeyData.find(c => slugify(c.name) === city);
+      if (selectedCityData) {
+        setDistrictsOfCity(selectedCityData.districts);
+        // Reset district if the new city doesn't have the currently selected district
+        if (!selectedCityData.districts.some(d => slugify(d) === district)) {
+          setDistrict("");
+        }
+      } else {
+        setDistrictsOfCity([]);
+      }
+    } else {
+      setDistrictsOfCity([]);
+    }
+  }, [city, district]);
 
 
 
@@ -146,9 +165,9 @@ export default function Home() {
                 className="w-full appearance-none rounded-2xl bg-slate-50 border-0 py-4 pl-12 pr-10 text-base font-medium text-slate-900 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-red-500 cursor-pointer"
               >
                 <option value="" disabled>İl Seçiniz</option>
-                {CITIES.map((c) => (
-                  <option key={c} value={c} className="capitalize">
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                {turkeyData.map((c) => (
+                  <option key={c.name} value={slugify(c.name)}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -169,9 +188,11 @@ export default function Home() {
                 className="w-full appearance-none rounded-2xl bg-slate-50 border-0 py-4 pl-12 pr-10 text-base font-medium text-slate-900 ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-red-500 cursor-pointer"
               >
                 <option value="" disabled>İlçe Seçiniz</option>
-                <option value="kadikoy">Kadıköy</option>
-                <option value="besiktas">Beşiktaş</option>
-                <option value="sisli">Şişli</option>
+                {districtsOfCity.map((d) => (
+                  <option key={d} value={slugify(d)}>
+                    {d}
+                  </option>
+                ))}
               </select>
               <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">
                 <ChevronDown className="h-5 w-5" />
