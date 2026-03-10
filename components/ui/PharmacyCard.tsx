@@ -1,4 +1,4 @@
-import { MapPin, Phone, ExternalLink } from "lucide-react";
+import { MapPin, Phone, Navigation, MessageCircle } from "lucide-react";
 import { Pharmacy } from "@/types";
 
 interface PharmacyCardProps {
@@ -7,6 +7,15 @@ interface PharmacyCardProps {
 }
 
 export function PharmacyCard({ pharmacy, isDuty = true }: PharmacyCardProps) {
+    const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.latitude},${pharmacy.longitude}`;
+
+    const whatsappText = `🏥 Nöbetçi Eczane: ${pharmacy.name}
+📍 Adres: ${pharmacy.address}
+📞 Telefon: ${pharmacy.phone}
+🗺️ Yol Tarifi: ${googleMapsLink}`;
+
+    const whatsappLink = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+
     return (
         <div className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-slate-300">
             <div className="p-5">
@@ -48,22 +57,31 @@ export function PharmacyCard({ pharmacy, isDuty = true }: PharmacyCardProps) {
                 </div>
             </div>
 
-            <div className="mt-auto flex flex-col gap-2 border-t border-slate-100 bg-slate-50 p-4 sm:flex-row">
+            <div className="mt-auto grid grid-cols-3 gap-2 border-t border-slate-100 bg-slate-50 p-4">
                 <a
                     href={`tel:${pharmacy.phone.replace(/\s+/g, "")}`}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-2 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
                 >
-                    <Phone className="h-4 w-4" />
-                    Hemen Ara
+                    <Phone className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span>Ara</span>
                 </a>
                 <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${pharmacy.latitude},${pharmacy.longitude}`}
+                    href={googleMapsLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-2 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
-                    <ExternalLink className="h-4 w-4" />
-                    Yol Tarifi
+                    <Navigation className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span>Yol Tarifi</span>
+                </a>
+                <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-2 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#20bd5a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366]"
+                >
+                    <MessageCircle className="h-5 w-5 sm:h-4 sm:w-4" />
+                    <span>Paylaş</span>
                 </a>
             </div>
         </div>
