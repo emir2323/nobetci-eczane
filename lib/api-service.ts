@@ -1,3 +1,5 @@
+"use server";
+
 import { mockPharmacies } from './mock-data';
 import { Pharmacy, CollectApiResponse } from '@/types';
 

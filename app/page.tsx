@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, Map as MapIcon, ChevronDown, Navigation, AlertCircle } from "lucide-react";
 import { PharmacyCard } from "@/components/ui/PharmacyCard";
-import { mockPharmacies } from "@/lib/mock-data";
+import { getPharmacies } from "@/lib/api-service";
 import { CITIES } from "@/lib/constants";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { calculateDistance, slugify } from "@/lib/utils";
@@ -24,12 +24,37 @@ export default function Home() {
 
   useEffect(() => {
     if (coordinates && filterMode === 'location') {
-      const pharmaciesWithDistance = mockPharmacies.map(p => ({
-        ...p,
-        distance: calculateDistance(coordinates.lat, coordinates.lng, p.latitude, p.longitude)
-      })).sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      const fetchNearestPharmacies = async () => {
+        try {
+          setIsSearching(true);
+          // 1. Reverse Geocoding
+          const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coordinates.lat}&longitude=${coordinates.lng}&localityLanguage=tr`);
+          const geoData = await geoRes.json();
 
-      setResults(pharmaciesWithDistance);
+          let userCity = slugify(geoData.principalSubdivision || "istanbul");
+          let userDistrict = slugify(geoData.city || geoData.locality || "kadikoy");
+
+          // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
+          if (userCity.includes('istanbul')) userCity = 'istanbul';
+
+          // 2. Fetch Real Pharmacies
+          const pharmacies = await getPharmacies(userCity, userDistrict);
+
+          // 3. Map and Sort Distances
+          const pharmaciesWithDistance = pharmacies.map(p => ({
+            ...p,
+            distance: calculateDistance(coordinates.lat, coordinates.lng, p.latitude, p.longitude)
+          })).sort((a, b) => (a.distance || 0) - (b.distance || 0));
+
+          setResults(pharmaciesWithDistance);
+        } catch (error) {
+          console.error("Bulunduğunuz konumdaki eczaneler getirilirken bir hata oluştu:", error);
+        } finally {
+          setIsSearching(false);
+        }
+      };
+
+      fetchNearestPharmacies();
     }
   }, [coordinates, filterMode]);
 
