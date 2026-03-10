@@ -20,10 +20,7 @@ export default function Home() {
 
   const { coordinates, error: locationError, loading: locationLoading, getLocation } = useGeolocation();
 
-  useEffect(() => {
-    // İlk yüklemede form bazlı veriyi getir
-    handleFormSearch();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   useEffect(() => {
     if (coordinates && filterMode === 'location') {
