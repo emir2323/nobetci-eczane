@@ -79,7 +79,10 @@ export default function Home() {
 
   const handleFormSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!city || !district) return;
+    if (!city || !district) {
+      alert("Lütfen arama yapmadan önce geçerli bir İl ve İlçe seçiniz.");
+      return;
+    }
 
     setIsSearching(true);
 
