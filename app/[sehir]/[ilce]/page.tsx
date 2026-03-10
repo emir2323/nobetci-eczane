@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     description: "Bölgenizdeki nöbetçi eczaneleri hemen görüntüleyin.",
 };
 
-export default function DistrictPharmaciesPage({ params }: PageProps) {
+export default async function DistrictPharmaciesPage({ params }: PageProps) {
     // Params güvenliği
     const sehir = params?.sehir || "istanbul";
     const ilce = params?.ilce || "kadikoy";
 
-    const pharmacies = getPharmacies(sehir, ilce);
+    const pharmacies = await getPharmacies(sehir, ilce);
 
     const displaySehir = sehir.charAt(0).toUpperCase() + sehir.slice(1);
     const displayIlce = ilce.charAt(0).toUpperCase() + ilce.slice(1);
