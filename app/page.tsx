@@ -21,13 +21,6 @@ export default function Home() {
 
   const { coordinates, error: locationError, loading: locationLoading, getLocation } = useGeolocation();
 
-  useEffect(() => {
-    if (locationError && filterMode === 'location') {
-      alert("Konumunuz bulunamadı, lütfen il ve ilçe seçerek arama yapınız.");
-      setFilterMode('form');
-    }
-  }, [locationError, filterMode]);
-
   // Update districts list when city changes
   useEffect(() => {
     if (city) {
@@ -85,20 +78,36 @@ export default function Home() {
           // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
           if (userCity.includes('istanbul')) userCity = 'istanbul';
 
+          // Gelen ilin gerçekten Türkiye'den bir il olup olmadığını doğrula
+          const isValidTurkishCity = turkeyData.some(c => slugify(c.name) === userCity);
+
+          if (!isValidTurkishCity) {
+            alert("Konumunuz Türkiye sınırları içinde tespit edilemedi. Lütfen listeden il seçerek arama yapınız.");
+            setFilterMode('form');
+            setIsSearching(false);
+            return;
+          }
+
           // Yalnızca şehre yönlendir
           router.push(`/${userCity}-nobetci-eczane`);
         } catch (error) {
           console.error("Bulunduğunuz konum işlenirken bir hata oluştu:", error);
-          alert("Konumunuz bulunamadı, lütfen il ve ilçe seçerek arama yapınız.");
+          alert("Konumunuz bulunamadı veya bağlantı hatası oluştu. Lütfen il seçerek arama yapınız.");
         } finally {
           setIsSearching(false);
           setFilterMode('form'); // reset mode
         }
       };
 
-      fetchNearestPharmacies();
+      // Konum veya izin hatası var mı?
+      if (locationError) {
+        alert("Konumunuz tespit edilemedi. " + locationError + " Lütfen listeden il seçerek arama yapınız.");
+        setFilterMode('form');
+      } else if (coordinates) {
+        fetchNearestPharmacies();
+      }
     }
-  }, [coordinates, filterMode]);
+  }, [coordinates, locationError, filterMode]);
 
   const handleFormSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
