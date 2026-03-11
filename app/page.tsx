@@ -46,28 +46,17 @@ export default function Home() {
       const fetchNearestPharmacies = async () => {
         try {
           setIsSearching(true);
-          // 1. Reverse Geocoding via Nominatim (OpenStreetMap)
+          // 1. Reverse Geocoding via BigDataCloud
           const geoRes = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=14&addressdetails=1&accept-language=tr`,
-            {
-              headers: {
-                'User-Agent': 'NobetciEczaneApp/1.0'
-              }
-            }
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coordinates.lat}&longitude=${coordinates.lng}&localityLanguage=tr`
           );
           const geoData = await geoRes.json();
 
-          if (!geoData || !geoData.address) {
-            throw new Error("Adres verisi alınamadı");
-          }
-
-          const address = geoData.address;
-
-          // İl bilgisini güvenli bir şekilde çekme (Sadece Şehir)
-          const rawCity = address.province || address.city || address.state;
+          // İl bilgisini çekme (Sadece Şehir)
+          const rawCity = geoData.principalSubdivision || geoData.city;
 
           if (!rawCity) {
-            alert("Tam konumunuz tespit edilemedi. Lütfen listeden il ve ilçe seçerek arama yapınız.");
+            alert("Konumunuz tespit edilemedi. Lütfen manuel seçiniz.");
             setFilterMode('form');
             setIsSearching(false);
             return;
