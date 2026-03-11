@@ -6,19 +6,22 @@ import { Pharmacy, CollectApiResponse } from '@/types';
 const API_KEY = "apikey 5prCX8oWf4p60GQEb1fA97:0BUL0mpXl7HVhlr0TgYW3W";
 const BASE_URL = "https://api.collectapi.com/health/dutyPharmacy";
 
-export async function getPharmacies(city: string, district: string): Promise<Pharmacy[]> {
+export async function getPharmacies(city: string, district?: string): Promise<Pharmacy[]> {
     const normalizedCity = city.toLowerCase();
-    const normalizedDistrict = district.toLowerCase();
+    const normalizedDistrict = district ? district.toLowerCase() : undefined;
 
     const getMockFallback = () => {
-        return mockPharmacies.filter(p =>
-            p.city.toLowerCase() === normalizedCity &&
-            p.district.toLowerCase() === normalizedDistrict
-        );
+        return mockPharmacies.filter(p => {
+            const matchCity = p.city.toLowerCase() === normalizedCity;
+            if (normalizedDistrict) {
+                return matchCity && p.district.toLowerCase() === normalizedDistrict;
+            }
+            return matchCity;
+        });
     };
 
     try {
-        const url = `${BASE_URL}?ilce=${district}&il=${city}`;
+        const url = district ? `${BASE_URL}?ilce=${district}&il=${city}` : `${BASE_URL}?il=${city}`;
 
         const response = await fetch(url, {
             method: 'GET',
@@ -41,12 +44,12 @@ export async function getPharmacies(city: string, district: string): Promise<Pha
             return getMockFallback();
         }
 
-        const pharmacies: Pharmacy[] = data.result.map((item, index) => {
+        const pharmacies: Pharmacy[] = data.result.map((apiItem: any) => {
             let latitude = 0;
             let longitude = 0;
 
-            if (item.loc) {
-                const parts = item.loc.split(',');
+            if (apiItem.loc) {
+                const parts = apiItem.loc.split(',');
                 if (parts.length === 2) {
                     latitude = parseFloat(parts[0].trim());
                     longitude = parseFloat(parts[1].trim());
@@ -54,14 +57,14 @@ export async function getPharmacies(city: string, district: string): Promise<Pha
             }
 
             return {
-                id: `${normalizedCity}-${normalizedDistrict}-${index}-${Date.now()}`,
-                name: item.name,
-                address: item.address,
-                phone: item.phone,
+                id: Math.random().toString(36).substr(2, 9),
+                name: apiItem.name,
+                address: apiItem.address,
+                phone: apiItem.phone,
                 latitude,
                 longitude,
                 city: normalizedCity,
-                district: item.dist ? item.dist.toLowerCase() : normalizedDistrict
+                district: apiItem.dist ? apiItem.dist.toLowerCase() : normalizedDistrict
             };
         });
 

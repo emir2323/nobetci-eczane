@@ -70,14 +70,10 @@ export default function Home() {
 
           const address = geoData.address;
 
-          // İl ve İlçe bilgisini geniş bir yelpazede çekme (Fallback zinciri)
+          // İl bilgisini güvenli bir şekilde çekme (Sadece Şehir)
           const rawCity = address.province || address.city || address.state;
-          const rawDistrict = address.town || address.county || address.city_district || address.district || address.suburb || address.village;
 
-          // KRİTİK NOKTA: Eğer city bulunduysa ancak district boşsa (Merkez ilçeler) "merkez" olarak ata.
-          const finalDistrict = rawDistrict || (rawCity ? "merkez" : null);
-
-          if (!rawCity || !finalDistrict) {
+          if (!rawCity) {
             alert("Tam konumunuz tespit edilemedi. Lütfen listeden il ve ilçe seçerek arama yapınız.");
             setFilterMode('form');
             setIsSearching(false);
@@ -85,13 +81,12 @@ export default function Home() {
           }
 
           let userCity = slugify(rawCity);
-          let userDistrict = slugify(finalDistrict);
 
           // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
           if (userCity.includes('istanbul')) userCity = 'istanbul';
 
-          // Yönlendirme işlemi SEO yapısına uyarlanıyor
-          router.push(`/${userCity}/${userDistrict}-nobetci-eczane`);
+          // Yalnızca şehre yönlendir
+          router.push(`/${userCity}-nobetci-eczane`);
         } catch (error) {
           console.error("Bulunduğunuz konum işlenirken bir hata oluştu:", error);
           alert("Konumunuz bulunamadı, lütfen il ve ilçe seçerek arama yapınız.");
