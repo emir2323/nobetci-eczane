@@ -52,6 +52,14 @@ export default function Home() {
           );
           const geoData = await geoRes.json();
 
+          // Önce ülkeyi kontrol et
+          if (geoData.countryCode && geoData.countryCode !== 'TR') {
+            alert("Konumunuz Türkiye sınırları dışında tespit edildi. Lütfen listeden il seçerek arama yapınız.");
+            setFilterMode('form');
+            setIsSearching(false);
+            return;
+          }
+
           // İl bilgisini çekme (Sadece Şehir)
           const rawCity = geoData.principalSubdivision || geoData.city;
 
@@ -62,20 +70,24 @@ export default function Home() {
             return;
           }
 
-          let userCity = slugify(rawCity);
+          const rawCitySlug = slugify(rawCity);
 
-          // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
-          if (userCity.includes('istanbul')) userCity = 'istanbul';
+          // Esnek eşleşme: API bazen "Elazığ Province" gibi ek kelimeler döndürebilir.
+          // Bu yüzden strict = yerine includes() ile eşleşme yapıyoruz.
+          const matchedCity = turkeyData.find(c => {
+            const s = slugify(c.name);
+            return rawCitySlug === s || rawCitySlug.includes(s) || s.includes(rawCitySlug);
+          });
 
-          // Gelen ilin gerçekten Türkiye'den bir il olup olmadığını doğrula
-          const isValidTurkishCity = turkeyData.some(c => slugify(c.name) === userCity);
-
-          if (!isValidTurkishCity) {
+          if (!matchedCity) {
             alert("Konumunuz Türkiye sınırları içinde tespit edilemedi. Lütfen listeden il seçerek arama yapınız.");
             setFilterMode('form');
             setIsSearching(false);
             return;
           }
+
+          // Verinin bizim listeyle birebir eşleşen slug'ını kullan (temiz URL)
+          const userCity = slugify(matchedCity.name);
 
           // Yalnızca şehre yönlendir
           router.push(`/${userCity}-nobetci-eczane`);
