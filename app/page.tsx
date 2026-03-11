@@ -52,29 +52,41 @@ export default function Home() {
           );
           const geoData = await geoRes.json();
 
+          // DEBUG: Konsolda API yanıtını görmek için
+          console.log("BigDataCloud API Yanıtı:", JSON.stringify(geoData, null, 2));
+          console.log("principalSubdivision:", geoData.principalSubdivision);
+          console.log("city:", geoData.city);
+          console.log("countryCode:", geoData.countryCode);
 
+          // Tüm potansiyel şehir alanlarını topla
+          const candidateFields = [
+            geoData.principalSubdivision,
+            geoData.city,
+            geoData.locality,
+            geoData.localityInfo?.administrative?.[2]?.name,
+            geoData.localityInfo?.administrative?.[1]?.name,
+          ].filter(Boolean);
 
+          console.log("Aday şehir alanları:", candidateFields);
 
-          // İl bilgisini çekme (Sadece Şehir)
-          const rawCity = geoData.principalSubdivision || geoData.city;
+          let matchedCity = null;
 
-          if (!rawCity) {
-            alert("Konumunuz tespit edilemedi. Lütfen manuel seçiniz.");
-            setFilterMode('form');
-            setIsSearching(false);
-            return;
+          // Her aday alanı dene
+          for (const candidate of candidateFields) {
+            const candidateSlug = slugify(candidate);
+            const found = turkeyData.find(c => {
+              const s = slugify(c.name);
+              return candidateSlug === s || candidateSlug.includes(s) || s.includes(candidateSlug);
+            });
+            if (found) {
+              matchedCity = found;
+              console.log("Eşleşen il:", found.name, "| Kaynak:", candidate);
+              break;
+            }
           }
 
-          const rawCitySlug = slugify(rawCity);
-
-          // Esnek eşleşme: API bazen "Elazığ Province" gibi ek kelimeler döndürebilir.
-          // Bu yüzden strict = yerine includes() ile eşleşme yapıyoruz.
-          const matchedCity = turkeyData.find(c => {
-            const s = slugify(c.name);
-            return rawCitySlug === s || rawCitySlug.includes(s) || s.includes(rawCitySlug);
-          });
-
           if (!matchedCity) {
+            console.error("Hiçbir il eşleşmedi. Aday alanlar:", candidateFields);
             alert("Konumunuz Türkiye sınırları içinde tespit edilemedi. Lütfen listeden il seçerek arama yapınız.");
             setFilterMode('form');
             setIsSearching(false);
