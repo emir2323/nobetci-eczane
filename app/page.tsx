@@ -53,12 +53,29 @@ export default function Home() {
       const fetchNearestPharmacies = async () => {
         try {
           setIsSearching(true);
-          // 1. Reverse Geocoding
-          const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${coordinates.lat}&longitude=${coordinates.lng}&localityLanguage=tr`);
+          // 1. Reverse Geocoding via Nominatim (OpenStreetMap)
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=10&addressdetails=1`);
           const geoData = await geoRes.json();
 
-          let userCity = slugify(geoData.principalSubdivision || "istanbul");
-          let userDistrict = slugify(geoData.city || geoData.locality || "kadikoy");
+          if (!geoData || !geoData.address) {
+            throw new Error("Adres verisi alınamadı");
+          }
+
+          const address = geoData.address;
+
+          // İl ve İlçe bilgisini güvenli bir şekilde çekme
+          const rawCity = address.province || address.state || address.city;
+          const rawDistrict = address.town || address.county || address.district || address.village;
+
+          if (!rawCity || !rawDistrict) {
+            alert("Tam konumunuz tespit edilemedi. Lütfen listeden il ve ilçe seçerek arama yapınız.");
+            setFilterMode('form');
+            setIsSearching(false);
+            return;
+          }
+
+          let userCity = slugify(rawCity);
+          let userDistrict = slugify(rawDistrict);
 
           // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
           if (userCity.includes('istanbul')) userCity = 'istanbul';
