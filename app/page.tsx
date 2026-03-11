@@ -52,13 +52,8 @@ export default function Home() {
           );
           const geoData = await geoRes.json();
 
-          // Önce ülkeyi kontrol et
-          if (geoData.countryCode && geoData.countryCode !== 'TR') {
-            alert("Konumunuz Türkiye sınırları dışında tespit edildi. Lütfen listeden il seçerek arama yapınız.");
-            setFilterMode('form');
-            setIsSearching(false);
-            return;
-          }
+
+
 
           // İl bilgisini çekme (Sadece Şehir)
           const rawCity = geoData.principalSubdivision || geoData.city;
