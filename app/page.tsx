@@ -54,7 +54,14 @@ export default function Home() {
         try {
           setIsSearching(true);
           // 1. Reverse Geocoding via Nominatim (OpenStreetMap)
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=10&addressdetails=1`);
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coordinates.lat}&lon=${coordinates.lng}&zoom=14&addressdetails=1&accept-language=tr`,
+            {
+              headers: {
+                'User-Agent': 'NobetciEczaneApp/1.0'
+              }
+            }
+          );
           const geoData = await geoRes.json();
 
           if (!geoData || !geoData.address) {
@@ -63,11 +70,14 @@ export default function Home() {
 
           const address = geoData.address;
 
-          // İl ve İlçe bilgisini güvenli bir şekilde çekme
-          const rawCity = address.province || address.state || address.city;
-          const rawDistrict = address.town || address.county || address.district || address.village;
+          // İl ve İlçe bilgisini geniş bir yelpazede çekme (Fallback zinciri)
+          const rawCity = address.province || address.city || address.state;
+          const rawDistrict = address.town || address.county || address.city_district || address.district || address.suburb || address.village;
 
-          if (!rawCity || !rawDistrict) {
+          // KRİTİK NOKTA: Eğer city bulunduysa ancak district boşsa (Merkez ilçeler) "merkez" olarak ata.
+          const finalDistrict = rawDistrict || (rawCity ? "merkez" : null);
+
+          if (!rawCity || !finalDistrict) {
             alert("Tam konumunuz tespit edilemedi. Lütfen listeden il ve ilçe seçerek arama yapınız.");
             setFilterMode('form');
             setIsSearching(false);
@@ -75,7 +85,7 @@ export default function Home() {
           }
 
           let userCity = slugify(rawCity);
-          let userDistrict = slugify(rawDistrict);
+          let userDistrict = slugify(finalDistrict);
 
           // API ve arayüz uyumu için bazı düzeltmeler (örn: "İstanbul" -> "istanbul")
           if (userCity.includes('istanbul')) userCity = 'istanbul';
