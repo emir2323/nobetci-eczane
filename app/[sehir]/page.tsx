@@ -14,8 +14,9 @@ export async function generateMetadata({ params }: { params: Promise<{ sehir: st
     const sehir = rawSehir.charAt(0).toUpperCase() + rawSehir.slice(1);
 
     return {
-        title: `${sehir} Nöbetçi Eczaneleri | Nöbetçi Eczane`,
-        description: `${sehir} ili genelindeki güncel nöbetçi eczaneler. Adres, telefon ve yol tarifi bilgileriyle hemen görüntüleyin.`,
+        title: `${sehir} Nöbetçi Eczaneleri | En Yakın Eczane`,
+        description: `${sehir} ili genelindeki en yakın nöbetçi eczaneler, adres, telefon ve yol tarifi bilgileri. ${sehir} nöbetçi eczane listesi.`,
+        keywords: `${sehir.toLowerCase()} nöbetçi eczane, ${sehir.toLowerCase()} nöbetçi eczaneler, ${sehir.toLowerCase()} en yakın eczane, gece açık eczane ${sehir.toLowerCase()}`,
     };
 }
 

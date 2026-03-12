@@ -1,42 +1,29 @@
 import { MetadataRoute } from 'next';
-import { mockPharmacies } from '@/lib/mock-data';
 import { mockBlogPosts } from '@/lib/mock-blog';
-import { slugify } from '@/lib/utils';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://nobetcieczane-demo.vercel.app';
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nobetcieczane.com';
 
-    // Statik Sayfalar
-    const routes = [
-        '',
-        '/blog',
-    ].map((route) => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date().toISOString(),
-        changeFrequency: 'daily' as const,
-        priority: route === '' ? 1 : 0.8,
-    }));
-
-    // Dinamik Blog Sayfaları (Mock Blog'dan veya API'den)
-    const blogRoutes = mockBlogPosts.map((post) => ({
+    const blogPosts = mockBlogPosts.map((post) => ({
         url: `${baseUrl}/blog/${post.slug}`,
-        lastModified: new Date().toISOString(),
+        lastModified: new Date(),
         changeFrequency: 'weekly' as const,
-        priority: 0.7,
+        priority: 0.8,
     }));
 
-    // Dinamik İl / İlçe Sayfaları (Mock/API veya Sabit Listeden)
-    // Eşsiz şehir-ilçe kombinasyonlarını bul
-    const uniqueLocations = Array.from(
-        new Set(mockPharmacies.map(p => `${slugify(p.city)}/${slugify(p.district)}`))
-    );
-
-    const locationRoutes = uniqueLocations.map((loc) => ({
-        url: `${baseUrl}/${loc}`,
-        lastModified: new Date().toISOString(),
-        changeFrequency: 'hourly' as const,     // Eczaneler sık değiştiği için
-        priority: 0.9,
-    }));
-
-    return [...routes, ...locationRoutes, ...blogRoutes];
+    return [
+        {
+            url: `${baseUrl}`,
+            lastModified: new Date(),
+            changeFrequency: 'always',
+            priority: 1,
+        },
+        {
+            url: `${baseUrl}/blog`,
+            lastModified: new Date(),
+            changeFrequency: 'daily',
+            priority: 0.9,
+        },
+        ...blogPosts,
+    ];
 }

@@ -15,8 +15,9 @@ export async function generateMetadata({ params }: { params: Promise<{ sehir: st
     const displayIlce = rawIlce.charAt(0).toUpperCase() + rawIlce.slice(1);
 
     return {
-        title: `${displayIlce} Nöbetçi Eczaneleri, ${sehir} | Nöbetçi Eczane`,
-        description: `${sehir} ili ${displayIlce} ilçesindeki güncel nöbetçi eczaneler. Adres, telefon ve yol tarifi bilgileriyle hemen görüntüleyin.`,
+        title: `${displayIlce} Nöbetçi Eczaneleri (${sehir}) | En Yakın Eczane`,
+        description: `${sehir} ili ${displayIlce} ilçesindeki en yakın nöbetçi eczaneler, adres, telefon ve yol tarifi bilgileri. ${displayIlce} nöbetçi eczane listesi.`,
+        keywords: `${displayIlce.toLowerCase()} nöbetçi eczane, ${sehir.toLowerCase()} nöbetçi eczaneler, ${displayIlce.toLowerCase()} en yakın eczane, gece açık eczane ${displayIlce.toLowerCase()}`,
     };
 }
 
