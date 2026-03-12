@@ -46,13 +46,33 @@ export default async function DistrictPharmaciesPage({
         const userLng = parseFloat(lngStr);
 
         if (!isNaN(userLat) && !isNaN(userLng)) {
-            pharmacies = pharmacies.map((pharmacy) => {
-                if (pharmacy.latitude && pharmacy.longitude) {
-                    const distance = calculateDistance(userLat, userLng, pharmacy.latitude, pharmacy.longitude);
-                    return { ...pharmacy, distance };
-                }
-                return pharmacy;
-            });
+            pharmacies = await Promise.all(
+                pharmacies.map(async (pharmacy) => {
+                    if (pharmacy.latitude && pharmacy.longitude) {
+                        try {
+                            // OSRM coordinates format: longitude,latitude
+                            const response = await fetch(
+                                `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${pharmacy.longitude},${pharmacy.latitude}?overview=false`,
+                                { signal: AbortSignal.timeout(3000) }
+                            );
+                            if (!response.ok) throw new Error("OSRM API error");
+                            const data = await response.json();
+                            
+                            if (data.routes && data.routes.length > 0) {
+                                // Distance is in meters, convert to km
+                                const distanceInMeters = data.routes[0].distance;
+                                const distance = Number((distanceInMeters / 1000).toFixed(1));
+                                return { ...pharmacy, distance };
+                            }
+                        } catch (error) {
+                            // Fallback to Haversine if OSRM fails
+                            const fallbackDistance = calculateDistance(userLat, userLng, pharmacy.latitude, pharmacy.longitude);
+                            return { ...pharmacy, distance: fallbackDistance };
+                        }
+                    }
+                    return pharmacy;
+                })
+            );
 
             // Sort by distance ascending
             pharmacies.sort((a, b) => {
