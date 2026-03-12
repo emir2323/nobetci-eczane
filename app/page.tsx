@@ -96,8 +96,18 @@ export default function Home() {
           // Verinin bizim listeyle birebir eşleşen slug'ını kullan (temiz URL)
           const userCity = slugify(matchedCity.name);
 
-          // Yalnızca şehre yönlendir
-          router.push(`/${userCity}-nobetci-eczane`);
+          // İlçe belirleme
+          let districtCandidate = geoData.locality || geoData.city || "merkez";
+          let userDistrict = slugify(districtCandidate);
+          
+          // İlçenin geçerliliğini kontrol et, yoksa merkez yap
+          const districtExists = matchedCity.districts.some((d: string) => slugify(d) === userDistrict || userDistrict.includes(slugify(d)));
+          if (!districtExists) {
+             userDistrict = "merkez";
+          }
+
+          // Yönlendirmeyi yap (il, ilçe ve koordinatları ekle)
+          router.push(`/${userCity}/${userDistrict}-nobetci-eczane?lat=${coordinates.lat}&lng=${coordinates.lng}`);
         } catch (error) {
           console.error("Bulunduğunuz konum işlenirken bir hata oluştu:", error);
           alert("Konumunuz bulunamadı veya bağlantı hatası oluştu. Lütfen il seçerek arama yapınız.");

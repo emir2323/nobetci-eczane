@@ -1,3 +1,4 @@
+import { calculateDistance } from "@/lib/utils";
 import { getPharmacies } from "@/lib/api-service";
 import { PharmacyCard } from "@/components/ui/PharmacyCard";
 import { Map as MapIcon, ChevronRight, Home } from "lucide-react";
@@ -19,15 +20,48 @@ export async function generateMetadata({ params }: { params: Promise<{ sehir: st
     };
 }
 
-export default async function DistrictPharmaciesPage({ params }: { params: Promise<{ sehir: string; ilce: string }> }) {
+export default async function DistrictPharmaciesPage({ 
+    params,
+    searchParams 
+}: { 
+    params: Promise<{ sehir: string; ilce: string }>;
+    searchParams?: Promise<{ lat?: string; lng?: string }>;
+}) {
     const resolvedParams = await params;
+    const resolvedSearchParams = searchParams ? await searchParams : {};
 
     // Gelen yönlendirme parametreleri 
     const sehir = resolvedParams.sehir;
     const rawIlce = resolvedParams.ilce;
     const ilce = rawIlce.replace(/-nobetci-eczane/g, '');
 
-    const pharmacies = await getPharmacies(sehir, ilce);
+    let pharmacies = await getPharmacies(sehir, ilce);
+
+    const latStr = resolvedSearchParams.lat;
+    const lngStr = resolvedSearchParams.lng;
+
+    if (latStr && lngStr) {
+        const userLat = parseFloat(latStr);
+        const userLng = parseFloat(lngStr);
+
+        if (!isNaN(userLat) && !isNaN(userLng)) {
+            pharmacies = pharmacies.map((pharmacy) => {
+                if (pharmacy.latitude && pharmacy.longitude) {
+                    const distance = calculateDistance(userLat, userLng, pharmacy.latitude, pharmacy.longitude);
+                    return { ...pharmacy, distance };
+                }
+                return pharmacy;
+            });
+
+            // Sort by distance ascending
+            pharmacies.sort((a, b) => {
+                if (a.distance === undefined && b.distance === undefined) return 0;
+                if (a.distance === undefined) return 1;
+                if (b.distance === undefined) return -1;
+                return a.distance - b.distance;
+            });
+        }
+    }
 
     const displaySehir = sehir.charAt(0).toUpperCase() + sehir.slice(1);
     const displayIlce = ilce.charAt(0).toUpperCase() + ilce.slice(1);
