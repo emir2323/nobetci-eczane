@@ -1,14 +1,18 @@
-import { mockBlogPosts } from "@/lib/mock-blog";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Calendar, User } from "lucide-react";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-    title: "Sağlık Köşesi | Nöbetçi Eczane Blog",
-    description: "Sağlıklı yaşam, doğru ilaç kullanımı ve güncel medikal bilgiler hakkında uzman eczacılarımızın makaleleri.",
-};
+import { getBlogPosts } from "@/lib/blog-store";
+import { BlogPost } from "@/lib/mock-blog";
 
 export default function BlogListPage() {
+    const [posts, setPosts] = useState<BlogPost[]>([]);
+
+    useEffect(() => {
+        setPosts(getBlogPosts());
+    }, []);
+
     return (
         <div className="space-y-10 pb-12">
             {/* Page Header */}
@@ -23,7 +27,7 @@ export default function BlogListPage() {
 
             {/* Blog Grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {mockBlogPosts.map((post) => (
+                {posts.map((post) => (
                     <Link href={`/blog/${post.slug}`} key={post.id} className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-lg hover:border-slate-300">
                         <div className="aspect-[16/9] w-full overflow-hidden bg-slate-100">
                             <img

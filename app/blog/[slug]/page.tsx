@@ -1,39 +1,42 @@
-import { mockBlogPosts } from "@/lib/mock-blog";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Calendar, User } from "lucide-react";
-import { Metadata } from "next";
 import AdSlot from "@/components/AdSlot";
+import ReactMarkdown from "react-markdown";
+import { getBlogPosts } from "@/lib/blog-store";
+import { BlogPost } from "@/lib/mock-blog";
 
-interface PageProps {
-    params: Promise<{ slug: string }>;
-}
+export default function BlogPostPage() {
+    const params = useParams();
+    const slug = params?.slug as string;
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const resolvedParams = await params;
-    const post = mockBlogPosts.find((p) => p.slug === resolvedParams.slug);
+    const [post, setPost] = useState<BlogPost | null | undefined>(undefined);
 
-    if (!post) {
-        return {
-            title: "Yazı Bulunamadı | Nöbetçi Eczane",
-        };
+    useEffect(() => {
+        const posts = getBlogPosts();
+        const found = posts.find((p) => p.slug === slug);
+        setPost(found ?? null);
+    }, [slug]);
+
+    if (post === undefined) {
+        // Loading state
+        return (
+            <div className="mx-auto max-w-4xl pb-12 pt-6 px-4 sm:px-6 lg:px-8 text-center text-slate-400">
+                Yükleniyor...
+            </div>
+        );
     }
 
-    return {
-        title: `${post.title} | Nöbetçi Eczane Blog`,
-        description: post.summary,
-        keywords: post.keywords ? post.keywords.split(',').map(k => k.trim()) : undefined,
-    };
-}
-
-export default async function BlogPostPage({ params }: PageProps) {
-    const resolvedParams = await params;
-    const slug = resolvedParams.slug;
-
-    const post = mockBlogPosts.find((p) => p.slug === slug);
-
-    if (!post) {
-        notFound();
+    if (post === null) {
+        return (
+            <div className="mx-auto max-w-4xl pb-12 pt-6 px-4 sm:px-6 lg:px-8 text-center text-slate-600">
+                <h1 className="text-2xl font-bold mb-4">Yazı Bulunamadı</h1>
+                <Link href="/blog" className="text-blue-600 hover:underline">Blog'a Dön</Link>
+            </div>
+        );
     }
 
     return (
@@ -79,11 +82,10 @@ export default async function BlogPostPage({ params }: PageProps) {
                 />
             </div>
 
-            {/* Body Content */}
-            <div 
-                className="prose prose-slate prose-lg md:prose-xl max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-500 leading-relaxed text-slate-700 break-words"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-            />
+            {/* Body Content — ReactMarkdown with prose */}
+            <div className="prose prose-slate prose-lg md:prose-xl max-w-none break-words prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-blue-600 hover:prose-a:text-blue-500 leading-relaxed text-slate-700">
+                <ReactMarkdown>{post.content}</ReactMarkdown>
+            </div>
 
             {/* Bottom Ad */}
             <AdSlot type="footer" className="mt-12" />

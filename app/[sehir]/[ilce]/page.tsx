@@ -6,7 +6,8 @@ import Link from "next/link";
 import { Metadata } from 'next';
 import AdSlot from "@/components/AdSlot";
 
-
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: Promise<{ sehir: string; ilce: string }> }): Promise<Metadata> {
     const resolvedParams = await params;
@@ -53,7 +54,7 @@ export default async function DistrictPharmaciesPage({
                             // OSRM coordinates format: longitude,latitude
                             const response = await fetch(
                                 `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${pharmacy.longitude},${pharmacy.latitude}?overview=false`,
-                                { signal: AbortSignal.timeout(3000) }
+                                { signal: AbortSignal.timeout(3000), cache: 'no-store' }
                             );
                             if (!response.ok) throw new Error("OSRM API error");
                             const data = await response.json();

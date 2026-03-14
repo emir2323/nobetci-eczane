@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User } from "lucide-react";
 
+const DEFAULT_USERNAME = "admin";
+const DEFAULT_PASSWORD = "123456";
+
 export default function AdminLoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -12,8 +15,12 @@ export default function AdminLoginPage() {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (username === "admin" && password === "123456") {
-            // Basit simülasyon: localStorage'a değer atıyoruz
+
+        // Read credentials from localStorage (fallback to defaults)
+        const savedUsername = localStorage.getItem("admin-username") || DEFAULT_USERNAME;
+        const savedPassword = localStorage.getItem("admin-password") || DEFAULT_PASSWORD;
+
+        if (username === savedUsername && password === savedPassword) {
             localStorage.setItem("admin-auth", "true");
             router.push("/admin/dashboard");
         } else {

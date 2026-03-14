@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { mockBlogPosts, BlogPost } from "@/lib/mock-blog";
-import { FileText, LogOut, Plus, Home, Edit, Trash2, MapPin, Settings } from "lucide-react";
+import { getBlogPosts, saveBlogPosts } from "@/lib/blog-store";
+import { FileText, LogOut, Plus, Home, Edit, Trash2, MapPin, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -11,7 +12,7 @@ export default function AdminDashboardPage() {
     const [isClient, setIsClient] = useState(false);
     const [activeTab, setActiveTab] = useState("makaleler");
 
-    // State for Fake CRUD
+    // State for Blog CRUD
     const [posts, setPosts] = useState<BlogPost[]>([]);
     const [showAddForm, setShowAddForm] = useState(false);
     const [newTitle, setNewTitle] = useState("");
@@ -20,18 +21,24 @@ export default function AdminDashboardPage() {
     const [newKeywords, setNewKeywords] = useState("");
     const [editPostId, setEditPostId] = useState<string | null>(null);
 
+    // Site Settings
     const [gaId, setGaId] = useState("");
     const [adCode1, setAdCode1] = useState("");
     const [adCode2, setAdCode2] = useState("");
 
+    // Security / Account Settings
+    const [newUsername, setNewUsername] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [securityMsg, setSecurityMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
     useEffect(() => {
         setIsClient(true);
-        // Basit güvenlik kontrolü
         const isAuth = localStorage.getItem("admin-auth");
         if (!isAuth) {
             router.push("/admin");
         } else {
-            setPosts(mockBlogPosts);
+            const stored = getBlogPosts();
+            setPosts(stored);
             setGaId(localStorage.getItem("gaId") || "");
             setAdCode1(localStorage.getItem("adCode1") || "");
             setAdCode2(localStorage.getItem("adCode2") || "");
@@ -47,15 +54,16 @@ export default function AdminDashboardPage() {
         e.preventDefault();
         if (!newTitle || !newContent) return;
 
+        let updatedPosts: BlogPost[];
+
         if (editPostId) {
-            // Update existing post
-            const updatedPosts = posts.map(post => {
+            updatedPosts = posts.map(post => {
                 if (post.id === editPostId) {
                     return {
                         ...post,
                         title: newTitle,
                         slug: newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                        summary: newContent.substring(0, 100) + "...",
+                        summary: newContent.substring(0, 150) + "...",
                         content: newContent,
                         imageUrl: newImage || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
                         keywords: newKeywords,
@@ -63,24 +71,30 @@ export default function AdminDashboardPage() {
                 }
                 return post;
             });
-            setPosts(updatedPosts);
         } else {
-            // Create new post
             const newPost: BlogPost = {
                 id: Date.now().toString(),
                 title: newTitle,
                 slug: newTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                summary: newContent.substring(0, 100) + "...",
+                summary: newContent.substring(0, 150) + "...",
                 content: newContent,
                 imageUrl: newImage || "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
                 date: new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }),
                 author: "Admin",
                 keywords: newKeywords,
             };
-            setPosts([newPost, ...posts]);
+            updatedPosts = [newPost, ...posts];
         }
 
+        setPosts(updatedPosts);
+        saveBlogPosts(updatedPosts); // Persist to localStorage
         resetForm();
+    };
+
+    const handleDeletePost = (id: string) => {
+        const updatedPosts = posts.filter(p => p.id !== id);
+        setPosts(updatedPosts);
+        saveBlogPosts(updatedPosts); // Persist to localStorage
     };
 
     const handleEditClick = (post: BlogPost) => {
@@ -90,7 +104,6 @@ export default function AdminDashboardPage() {
         setNewContent(post.content);
         setNewKeywords(post.keywords || "");
         setShowAddForm(true);
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -101,7 +114,7 @@ export default function AdminDashboardPage() {
         setNewContent("");
         setNewImage("");
         setNewKeywords("");
-    }
+    };
 
     const handleSaveSettings = (e: React.FormEvent) => {
         e.preventDefault();
@@ -111,7 +124,30 @@ export default function AdminDashboardPage() {
         alert("Ayarlar başarıyla kaydedildi!");
     };
 
-    if (!isClient) return null; // Hydration hatasını önlemek için
+    const handleSaveSecurity = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newUsername && !newPassword) {
+            setSecurityMsg({ type: "error", text: "Lütfen en az bir alan doldurun." });
+            return;
+        }
+        if (newUsername) {
+            localStorage.setItem("admin-username", newUsername);
+        }
+        if (newPassword) {
+            localStorage.setItem("admin-password", newPassword);
+        }
+        setSecurityMsg({ type: "success", text: "Kimlik bilgileri başarıyla güncellendi!" });
+        setNewUsername("");
+        setNewPassword("");
+    };
+
+    const handleResetBlogCache = () => {
+        localStorage.removeItem("blog-posts");
+        setPosts(mockBlogPosts);
+        alert("Blog verileri sıfırlandı. Varsayılan makaleler geri yüklendi.");
+    };
+
+    if (!isClient) return null;
 
     return (
         <div className="flex flex-col md:flex-row gap-6 min-h-[70vh]">
@@ -147,6 +183,13 @@ export default function AdminDashboardPage() {
                         <Settings className={`h-5 w-5 ${activeTab === 'ayarlar' ? 'text-blue-500' : 'text-slate-400'}`} />
                         Site Ayarları
                     </button>
+                    <button
+                        onClick={() => { setActiveTab("guvenlik"); setSecurityMsg(null); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeTab === 'guvenlik' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                    >
+                        <Shield className={`h-5 w-5 ${activeTab === 'guvenlik' ? 'text-blue-500' : 'text-slate-400'}`} />
+                        Güvenlik
+                    </button>
                 </nav>
 
                 <div className="mt-auto pt-4 border-t border-slate-100">
@@ -166,15 +209,24 @@ export default function AdminDashboardPage() {
                     <div>
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 border-b border-slate-100 pb-4">
                             <h1 className="text-2xl font-bold text-slate-900">Makale Yönetimi</h1>
-                            <button
-                                onClick={() => {
-                                    if (showAddForm) resetForm();
-                                    else setShowAddForm(true);
-                                }}
-                                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
-                            >
-                                {showAddForm ? 'İptal Et' : <><Plus className="h-4 w-4" /> Yeni Ekle</>}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleResetBlogCache}
+                                    className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-colors"
+                                    title="Varsayılan makaleleri geri yükle"
+                                >
+                                    Sıfırla
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (showAddForm) resetForm();
+                                        else setShowAddForm(true);
+                                    }}
+                                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+                                >
+                                    {showAddForm ? 'İptal Et' : <><Plus className="h-4 w-4" /> Yeni Ekle</>}
+                                </button>
+                            </div>
                         </div>
 
                         {showAddForm && (
@@ -202,9 +254,10 @@ export default function AdminDashboardPage() {
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">İçerik (Markdown destekler)</label>
                                         <textarea
-                                            required rows={5}
+                                            required rows={8}
                                             value={newContent} onChange={e => setNewContent(e.target.value)}
-                                            className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            placeholder="# Başlık&#10;&#10;**Kalın metin**, *italik* ve diğer Markdown formatlarını kullanabilirsiniz."
+                                            className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
                                         ></textarea>
                                     </div>
                                     <div>
@@ -239,8 +292,9 @@ export default function AdminDashboardPage() {
                                         >
                                             <Edit className="h-4 w-4" />
                                         </button>
-                                        <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            onClick={() => setPosts(posts.filter(p => p.id !== post.id))}
+                                        <button
+                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            onClick={() => handleDeletePost(post.id)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
@@ -268,7 +322,7 @@ export default function AdminDashboardPage() {
                         <h1 className="text-2xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">Site Ayarları</h1>
                         <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Google Analytics ID (str. G-XXXX)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Google Analytics ID (örn. G-XXXX)</label>
                                 <input
                                     type="text"
                                     value={gaId} onChange={e => setGaId(e.target.value)}
@@ -298,6 +352,50 @@ export default function AdminDashboardPage() {
                                 Ayarları Kaydet
                             </button>
                         </form>
+                    </div>
+                )}
+
+                {activeTab === 'guvenlik' && (
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 mb-2 border-b border-slate-100 pb-4">Güvenlik / Hesap Ayarları</h1>
+                        <p className="text-sm text-slate-500 mb-8">Yönetim paneli giriş bilgilerinizi buradan güncelleyebilirsiniz. Boş bıraktığınız alanlar değiştirilmeyecek.</p>
+
+                        {securityMsg && (
+                            <div className={`mb-6 rounded-xl p-4 text-sm font-medium border ${securityMsg.type === 'success' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                                {securityMsg.text}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSaveSecurity} className="space-y-6 max-w-md">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Yeni Kullanıcı Adı</label>
+                                <input
+                                    type="text"
+                                    value={newUsername}
+                                    onChange={e => setNewUsername(e.target.value)}
+                                    placeholder="Yeni kullanıcı adı girin"
+                                    className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre</label>
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    placeholder="Yeni şifre girin"
+                                    className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                />
+                            </div>
+                            <button type="submit" className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-colors">
+                                Bilgileri Güncelle
+                            </button>
+                        </form>
+
+                        <div className="mt-10 p-5 bg-amber-50 border border-amber-200 rounded-2xl max-w-md">
+                            <h3 className="text-sm font-bold text-amber-800 mb-1">⚠️ Önemli Not</h3>
+                            <p className="text-sm text-amber-700">Bu ayarlar tarayıcının yerel depolama alanına (localStorage) kaydedilir. Tarayıcı verilerinizi temizlerseniz varsayılan kimlik bilgilerine dönülür.</p>
+                        </div>
                     </div>
                 )}
             </main>
